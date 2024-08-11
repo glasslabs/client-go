@@ -52,7 +52,7 @@ func (m *Module) ParseConfig(v any) error {
 // Asset returns the path in the configured asset directory.
 func (m *Module) Asset(path string) ([]byte, error) {
 	assetPath := os.Getenv("ASSETS_URL")
-	u, err := url.Parse(os.Getenv("ASSETS_URL"))
+	u, err := url.Parse(assetPath)
 	if err != nil {
 		return nil, fmt.Errorf("parsing assest path %q: %w", assetPath, err)
 	}
