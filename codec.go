@@ -16,6 +16,7 @@ var widgetByTag = map[string]func() Widget{
 	"hstack": func() Widget { return &HStack{} },
 	"spacer": func() Widget { return &Spacer{} },
 	"canvas": func() Widget { return &Canvas{} },
+	"table":  func() Widget { return &Table{} },
 }
 
 // drawOpByTag maps XML element names to factory functions for DrawOp implementations.
@@ -63,6 +64,79 @@ func (v *VStack) UnmarshalXML(d *xml.Decoder, _ xml.StartElement) error {
 func (h *HStack) UnmarshalXML(d *xml.Decoder, _ xml.StartElement) error {
 	return decodeWidgetChildren(d, func(child Widget) {
 		h.Children = append(h.Children, child)
+	})
+}
+
+// UnmarshalXML decodes the Table element and its Row children.
+func (t *Table) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	for _, attr := range start.Attr {
+		if attr.Name.Local == "rowSpacing" {
+			f, _ := strconv.ParseFloat(attr.Value, 32)
+			t.RowSpacing = float32(f)
+		}
+	}
+	for {
+		tok, err := d.Token()
+		if err != nil {
+			return err
+		}
+		switch el := tok.(type) {
+		case xml.StartElement:
+			if el.Name.Local != "row" {
+				if err = d.Skip(); err != nil {
+					return err
+				}
+				continue
+			}
+			row := &Row{}
+			if err = d.DecodeElement(row, &el); err != nil {
+				return err
+			}
+			t.Rows = append(t.Rows, row)
+		case xml.EndElement:
+			return nil
+		}
+	}
+}
+
+// UnmarshalXML decodes the Row element and its Column children.
+func (r *Row) UnmarshalXML(d *xml.Decoder, _ xml.StartElement) error {
+	for {
+		tok, err := d.Token()
+		if err != nil {
+			return err
+		}
+		switch el := tok.(type) {
+		case xml.StartElement:
+			if el.Name.Local != "column" {
+				if err = d.Skip(); err != nil {
+					return err
+				}
+				continue
+			}
+			col := &Column{}
+			if err = d.DecodeElement(col, &el); err != nil {
+				return err
+			}
+			r.Columns = append(r.Columns, col)
+		case xml.EndElement:
+			return nil
+		}
+	}
+}
+
+// UnmarshalXML decodes the Column element, its minWidth attribute, and its single Widget child.
+func (c *Column) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	for _, attr := range start.Attr {
+		if attr.Name.Local == "minWidth" {
+			f, _ := strconv.ParseFloat(attr.Value, 32)
+			c.MinWidth = float32(f)
+		}
+	}
+	return decodeWidgetChildren(d, func(child Widget) {
+		if c.Child == nil {
+			c.Child = child
+		}
 	})
 }
 

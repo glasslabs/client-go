@@ -101,6 +101,44 @@ func TestWidget_DecodeRoundtripsCanvas(t *testing.T) {
 	assert.Equal(t, "#282828", arc.Color)
 }
 
+func TestWidget_DecodeRoundtripsTable(t *testing.T) {
+	t.Parallel()
+
+	original := client.NewTable(
+		[]*client.Row{
+			client.NewRow(
+				client.NewColumn(client.NewText("Mon", client.WithFontSize(14)), 60),
+				client.NewColumn(client.NewText("2 Jan", client.WithFontSize(20)), 0),
+			),
+			client.NewRow(
+				client.NewColumn(client.NewText("Tue", client.WithFontSize(14)), 60),
+				client.NewColumn(client.NewText("3 Jan", client.WithFontSize(20)), 0),
+			),
+		},
+		client.WithRowSpacing(8),
+	)
+	data, err := xml.Marshal(original)
+	require.NoError(t, err)
+
+	got, err := client.DecodeWidget(data)
+	require.NoError(t, err)
+
+	table, ok := got.(*client.Table)
+	require.True(t, ok)
+	assert.Equal(t, float32(8), table.RowSpacing)
+	require.Len(t, table.Rows, 2)
+
+	row := table.Rows[0]
+	require.Len(t, row.Columns, 2)
+
+	col := row.Columns[0]
+	assert.Equal(t, float32(60), col.MinWidth)
+	text, ok := col.Child.(*client.Text)
+	require.True(t, ok)
+	assert.Equal(t, "Mon", text.Content)
+	assert.Equal(t, float32(14), text.FontSize)
+}
+
 func TestWidget_DecodeReturnsErrorForUnknownKind(t *testing.T) {
 	t.Parallel()
 

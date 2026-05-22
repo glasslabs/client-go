@@ -49,6 +49,27 @@ type HStack struct {
 	Children []Widget `xml:"-"`
 }
 
+// Column is a cell within a Row, holding a single child widget.
+type Column struct {
+	XMLName  xml.Name `xml:"column"`
+	MinWidth float32  `xml:"minWidth,attr,omitempty"`
+	Child    Widget   `xml:"-"`
+}
+
+// Row is a horizontal sequence of Column cells within a Table.
+type Row struct {
+	XMLName xml.Name  `xml:"row"`
+	Columns []*Column `xml:"-"`
+}
+
+// Table lays out Row children vertically, automatically sizing each column
+// to the widest natural width across all rows.
+type Table struct {
+	XMLName    xml.Name `xml:"table"`
+	RowSpacing float32  `xml:"rowSpacing,attr,omitempty"`
+	Rows       []*Row   `xml:"-"`
+}
+
 // Spacer inserts flexible empty space inside a stack.
 type Spacer struct {
 	XMLName xml.Name `xml:"spacer"`
@@ -108,6 +129,7 @@ func (*Text) widget()   {}
 func (*SVG) widget()    {}
 func (*VStack) widget() {}
 func (*HStack) widget() {}
+func (*Table) widget()  {}
 func (*Spacer) widget() {}
 func (*Canvas) widget() {}
 
@@ -174,9 +196,94 @@ func NewSpacer(opts ...SpacerOption) *Spacer {
 	return s
 }
 
+// NewColumn returns a Column containing child with an optional minimum width in dp.
+func NewColumn(child Widget, minWidth float32) *Column {
+	return &Column{Child: child, MinWidth: minWidth}
+}
+
+// NewRow returns a Row containing the given Column cells.
+func NewRow(cols ...*Column) *Row {
+	return &Row{Columns: cols}
+}
+
+// TableOption configures a Table widget.
+type TableOption func(*Table)
+
+// WithRowSpacing sets the vertical gap in dp between rows.
+func WithRowSpacing(dp float32) TableOption { return func(t *Table) { t.RowSpacing = dp } }
+
+// NewTable returns a Table containing the given Row children.
+func NewTable(rows []*Row, opts ...TableOption) *Table {
+	t := &Table{Rows: rows}
+	for _, o := range opts {
+		o(t)
+	}
+	return t
+}
+
 // NewCanvas returns a Canvas widget with the given logical size and ordered draw list.
 func NewCanvas(width, height float32, ops ...DrawOp) *Canvas {
 	return &Canvas{Width: width, Height: height, Ops: ops}
+}
+
+// MarshalXML implements xml.Marshaler.
+func (t *Table) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	start.Name = xml.Name{Local: "table"}
+	if t.RowSpacing > 0 {
+		start.Attr = append(start.Attr, xml.Attr{
+			Name:  xml.Name{Local: "rowSpacing"},
+			Value: formatFloat32(t.RowSpacing),
+		})
+	}
+	if err := e.EncodeToken(start); err != nil {
+		return err
+	}
+	for _, row := range t.Rows {
+		if row == nil {
+			continue
+		}
+		if err := e.Encode(row); err != nil {
+			return err
+		}
+	}
+	return e.EncodeToken(start.End())
+}
+
+// MarshalXML implements xml.Marshaler.
+func (r *Row) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	start.Name = xml.Name{Local: "row"}
+	if err := e.EncodeToken(start); err != nil {
+		return err
+	}
+	for _, col := range r.Columns {
+		if col == nil {
+			continue
+		}
+		if err := e.Encode(col); err != nil {
+			return err
+		}
+	}
+	return e.EncodeToken(start.End())
+}
+
+// MarshalXML implements xml.Marshaler.
+func (c *Column) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	start.Name = xml.Name{Local: "column"}
+	if c.MinWidth > 0 {
+		start.Attr = append(start.Attr, xml.Attr{
+			Name:  xml.Name{Local: "minWidth"},
+			Value: formatFloat32(c.MinWidth),
+		})
+	}
+	if err := e.EncodeToken(start); err != nil {
+		return err
+	}
+	if c.Child != nil {
+		if err := e.Encode(c.Child); err != nil {
+			return err
+		}
+	}
+	return e.EncodeToken(start.End())
 }
 
 // MarshalXML implements xml.Marshaler.
