@@ -9,13 +9,11 @@ import (
 )
 
 // Logger writes structured log messages to the host.
-type Logger struct {
-	name string
-}
+type Logger struct{}
 
 // NewLogger returns a new Logger.
 func NewLogger() *Logger {
-	return &Logger{name: os.Getenv("MODULE_NAME")}
+	return &Logger{}
 }
 
 // Debug writes a debug log message.
@@ -42,8 +40,6 @@ func (l *Logger) format(level, msg string, kvs []string) string {
 	var b strings.Builder
 	b.WriteString("level=")
 	b.WriteString(level)
-	b.WriteString(" module=")
-	b.WriteString(l.name)
 	b.WriteString(" msg=")
 	b.WriteString(fmt.Sprintf("%q", msg))
 	for i := 0; i+1 < len(kvs); i += 2 {

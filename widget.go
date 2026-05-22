@@ -20,6 +20,17 @@ type Text struct {
 	Align     string   `xml:"align,attr,omitempty"`
 }
 
+func (t *Text) Equals(o *Text) bool {
+	return t.Content == o.Content &&
+		t.Color == o.Color &&
+		t.FontSize == o.FontSize &&
+		t.Condensed == o.Condensed &&
+		t.Light == o.Light &&
+		t.Bold == o.Bold &&
+		t.Italic == o.Italic &&
+		t.Align == o.Align
+}
+
 // SVG rasterizes raw SVG markup. Used for complex assets such as a floorplan.
 type SVG struct {
 	XMLName xml.Name `xml:"svg"`
@@ -41,6 +52,7 @@ type HStack struct {
 // Spacer inserts flexible empty space inside a stack.
 type Spacer struct {
 	XMLName xml.Name `xml:"spacer"`
+	Min     float32  `xml:"min,attr,omitempty"`
 }
 
 // Canvas renders draw operations within a fixed-size logical viewport scaled to
@@ -50,6 +62,46 @@ type Canvas struct {
 	Width   float32  `xml:"-"`
 	Height  float32  `xml:"-"`
 	Ops     []DrawOp `xml:"-"`
+}
+
+func (c *Canvas) Equals(o *Canvas) bool {
+	if c.Width != o.Width || c.Height != o.Height || len(c.Ops) != len(o.Ops) {
+		return false
+	}
+	for i, aOp := range c.Ops {
+		if !drawOpEqual(aOp, o.Ops[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+func drawOpEqual(a, b DrawOp) bool {
+	switch av := a.(type) {
+	case *Arc:
+		bv, ok := b.(*Arc)
+		return ok && *av == *bv
+	case *Rect:
+		bv, ok := b.(*Rect)
+		return ok && *av == *bv
+	case *Path:
+		bv, ok := b.(*Path)
+		return ok && *av == *bv
+	case *Label:
+		bv, ok := b.(*Label)
+		if !ok || av.X != bv.X || av.Y != bv.Y || av.Align != bv.Align || len(av.Runs) != len(bv.Runs) {
+			return false
+		}
+		for i, ar := range av.Runs {
+			br := bv.Runs[i]
+			if ar == nil || br == nil || *ar != *br {
+				return false
+			}
+		}
+		return true
+	default:
+		return false
+	}
 }
 
 func (*Text) widget()   {}
@@ -107,9 +159,19 @@ func NewHStack(children ...Widget) *HStack {
 	return &HStack{Children: children}
 }
 
-// NewSpacer returns a Spacer widget that expands to fill available space.
-func NewSpacer() *Spacer {
-	return &Spacer{}
+// SpacerOption configures a Spacer widget.
+type SpacerOption func(*Spacer)
+
+// WithMinSize sets the minimum size in dp that the spacer occupies along its primary axis.
+func WithMinSize(min float32) SpacerOption { return func(s *Spacer) { s.Min = min } }
+
+// NewSpacer returns a Spacer that expands to fill available space with a default minimum size of 8 dp.
+func NewSpacer(opts ...SpacerOption) *Spacer {
+	s := &Spacer{Min: 8}
+	for _, o := range opts {
+		o(s)
+	}
+	return s
 }
 
 // NewCanvas returns a Canvas widget with the given logical size and ordered draw list.
