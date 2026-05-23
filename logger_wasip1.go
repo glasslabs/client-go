@@ -41,14 +41,14 @@ func (l *Logger) format(level, msg string, kvs []string) string {
 	b.WriteString("level=")
 	b.WriteString(level)
 	b.WriteString(" msg=")
-	b.WriteString(fmt.Sprintf("%q", msg))
+	_, _ = fmt.Fprintf(&b, "%q", msg)
 	for i := 0; i+1 < len(kvs); i += 2 {
 		b.WriteByte(' ')
 		b.WriteString(kvs[i])
 		b.WriteByte('=')
 		val := kvs[i+1]
 		if strings.ContainsAny(val, " \t\r\n\"") {
-			b.WriteString(fmt.Sprintf("%q", val))
+			_, _ = fmt.Fprintf(&b, "%q", val)
 		} else {
 			b.WriteString(val)
 		}

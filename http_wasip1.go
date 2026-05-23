@@ -147,4 +147,3 @@ func (b *streamBody) Close() error {
 	}
 	return nil
 }
-

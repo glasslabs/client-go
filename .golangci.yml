@@ -43,9 +43,12 @@ linters:
       max-complexity: 20
     gosec:
       excludes:
-        - G302
-        - G306
+        - G103
+        - G115
+        - G304
     lll:
       line-length: 160
+    perfsprint:
+      error-format: false
   exclusions:
     generated: lax
