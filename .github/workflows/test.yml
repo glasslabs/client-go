@@ -4,13 +4,15 @@ on:
       - main
   pull_request:
 
+env:
+  GOOS: wasip1
+  GOARCH: wasm
+
 name: run tests
 jobs:
   lint:
     runs-on: ubuntu-latest
     env:
-      GOOS: wasip1
-      GOARCH: wasm
       GOLANGCI_LINT_VERSION: v2.11.4
 
     steps:

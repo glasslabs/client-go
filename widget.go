@@ -20,6 +20,8 @@ type Text struct {
 	Align     string   `xml:"align,attr,omitempty"`
 }
 
+// Equals checks the logical equality of two Text widgets, ignoring differences that don't
+// affect rendering such as the order of style options.
 func (t *Text) Equals(o *Text) bool {
 	return t.Content == o.Content &&
 		t.Color == o.Color &&
@@ -85,6 +87,8 @@ type Canvas struct {
 	Ops     []DrawOp `xml:"-"`
 }
 
+// Equals checks the logical equality of two Canvas widgets, ignoring differences that don't
+// affect rendering such as the order of draw operations with identical parameters.
 func (c *Canvas) Equals(o *Canvas) bool {
 	if c.Width != o.Width || c.Height != o.Height || len(c.Ops) != len(o.Ops) {
 		return false
@@ -185,7 +189,7 @@ func NewHStack(children ...Widget) *HStack {
 type SpacerOption func(*Spacer)
 
 // WithMinSize sets the minimum size in dp that the spacer occupies along its primary axis.
-func WithMinSize(min float32) SpacerOption { return func(s *Spacer) { s.Min = min } }
+func WithMinSize(minSize float32) SpacerOption { return func(s *Spacer) { s.Min = minSize } }
 
 // NewSpacer returns a Spacer that expands to fill available space with a default minimum size of 8 dp.
 func NewSpacer(opts ...SpacerOption) *Spacer {
