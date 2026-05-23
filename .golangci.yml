@@ -1,48 +1,54 @@
+version: "2"
 run:
   tests: false
-  deadline: 5m
 
-linters-settings:
-  gofumpt:
-    extra-rules: true
+formatters:
+  enable:
+    - gci
+    - gofmt
+    - gofumpt
+    - goimports
+  settings:
+    gofumpt:
+      extra-rules: true
+  exclusions:
+    generated: lax
 
 linters:
-  enable-all: true
+  default: all
   disable:
-    - interfacebloat
-    - sqlclosecheck # not relevant (SQL)
-    - rowserrcheck # not relevant (SQL)
-    - execinquery # not relevant (SQL)
-    - interfacer # deprecated
-    - scopelint # deprecated
-    - maligned # deprecated
-    - golint # deprecated
-    - deadcode # deprecated
-    - exhaustivestruct # deprecated
-    - ifshort # deprecated
-    - nosnakecase # deprecated
-    - structcheck # deprecated
-    - varcheck # deprecated
-    - cyclop # duplicate of gocyclo
     - depguard
+    - err113
     - exhaustive
     - exhaustruct
     - forcetypeassert
+    - funcorder
     - funlen
     - gochecknoglobals
     - gochecknoinits
-    - gocognit
-    - gocyclo
-    - goerr113
-    - gomnd
+    - gomoddirectives
     - ireturn
-    - nestif
+    - mnd
+    - musttag
+    - nilerr
     - nlreturn
+    - noinlineerr
     - nonamedreturns
-    - tagliatelle
     - varnamelen
     - wrapcheck
     - wsl
-
-issues:
-  exclude-use-default: false
+    - wsl_v5
+  settings:
+    cyclop:
+      max-complexity: 20
+    gosec:
+      excludes:
+        - G103
+        - G115
+        - G304
+    lll:
+      line-length: 160
+    perfsprint:
+      error-format: false
+  exclusions:
+    generated: lax

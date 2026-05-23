@@ -1,2 +1,2 @@
-// Package client provides bridging functions between WASM modules and looking glass.
+// Package client is the client library for writing looking-glass WASM modules.
 package client
