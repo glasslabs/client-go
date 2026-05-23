@@ -25,5 +25,5 @@ test:
 
 # Lint the project
 lint:
-	@GOOS=wasip1 GOARC=wasm golangci-lint run ./...
+	@GOOS=wasip1 GOARCH=wasm golangci-lint run ./...
 .PHONY: lint
